@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product | GlowCart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page">
+    <p class="breadcrumb"><a href="index.html">Home</a> › <a href="index.html#products">Products</a> › <span id="crumb">…</span></p>
+    <div id="product-detail"><p class="loading">Loading…</p></div>
+    <section id="related-section" class="related" hidden>
+        <h2>You may also like 💖</h2>
+        <div class="product-grid" id="related-grid"></div>
+    </section>
+</main>
+<div id="site-footer"></div>
+<script src="common.js"></script>
+<script>
+(async function () {
+    await initPage();
+    const id = Number(new URLSearchParams(location.search).get("id"));
+    const box = document.getElementById("product-detail");
+    let related = [];
+
+    try {
+        const data = await api("/api/products/" + id);
+        const p = data.product;
+        related = data.related;
+        document.title = p.name + " | GlowCart";
+        document.getElementById("crumb").textContent = p.name;
+        const out = p.stock === 0;
+
+        box.innerHTML = `
+        <div class="detail">
+            <div class="detail-img"><img src="${esc(p.image)}" alt="${esc(p.name)}"></div>
+            <div class="detail-info">
+                <span class="category-tag">${esc(p.category)}</span>
+                <h1>${esc(p.name)}</h1>
+                <div class="rating">${"★".repeat(Math.round(p.rating))}${"☆".repeat(5 - Math.round(p.rating))} <small>${p.rating.toFixed(1)} / 5</small></div>
+                <p class="price big">${formatPrice(p.price)}</p>
+                <p class="desc">${esc(p.description)}</p>
+                <p class="stock ${out ? "out" : p.stock <= 5 ? "low" : "ok"}">
+                    ${out ? "Out of stock" : p.stock <= 5 ? "Hurry! Only " + p.stock + " left" : "In stock"}
+                </p>
+                <div class="buy-row">
+                    <div class="qty">
+                        <button type="button" id="minus" aria-label="Decrease">−</button>
+                        <span id="qty">1</span>
+                        <button type="button" id="plus" aria-label="Increase">+</button>
+                    </div>
+                    <button class="primary-btn" id="add" ${out ? "disabled" : ""}>${out ? "Sold Out" : "Add to Cart 🛒"}</button>
+                </div>
+                <ul class="perks"><li>🚚 Fast delivery across Pakistan</li><li>💵 Cash on Delivery available</li><li>🔒 Secure shopping</li></ul>
+            </div>
+        </div>`;
+
+        let qty = 1;
+        const max = Math.min(20, p.stock);
+        const qtyEl = document.getElementById("qty");
+        document.getElementById("minus").onclick = () => { qty = Math.max(1, qty - 1); qtyEl.textContent = qty; };
+        document.getElementById("plus").onclick = () => { qty = Math.min(max, qty + 1); qtyEl.textContent = qty; };
+        document.getElementById("add").onclick = () => {
+            Cart.add(p.id, qty);
+            toast(`${qty} × ${p.name} added to your cart 🛒`);
+        };
+    } catch (err) {
+        box.innerHTML = `<p class="loading error">${esc(err.message)} <a href="index.html#products">Back to products</a></p>`;
+        document.getElementById("crumb").textContent = "Not found";
+        return;
+    }
+
+    if (related.length) {
+        document.getElementById("related-section").hidden = false;
+        const grid = document.getElementById("related-grid");
+        grid.innerHTML = related.map(productCardHTML).join("");
+        wireAddButtons(grid, () => related);
+    }
+})();
+</script>
+</body>
+</html>

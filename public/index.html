@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlowCart | Online Store</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- NAVBAR (rendered by common.js) -->
+    <div id="site-header"></div>
+
+
+    <!-- HERO -->
+    <section id="home" class="hero">
+
+        <img
+            src="images/banner.jpg"
+            alt="GlowCart Fashion Banner"
+            class="banner-image"
+        >
+
+        <div class="hero-overlay">
+
+            <h1>Welcome to GlowCart ✨</h1>
+
+            <p>
+                Fashion, Beauty & Luxury Products
+            </p>
+
+            <a href="#products" class="shop-btn">
+                Shop Now 🛍️
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- PRODUCTS -->
+    <section id="products" class="products-section">
+
+        <h2>Our Products 🛍️</h2>
+
+        <p class="subtitle">
+            Explore our beautiful collection
+        </p>
+
+        <div class="filters">
+            <input type="search" id="search" placeholder="🔍 Search products..." aria-label="Search products">
+            <select id="category" aria-label="Category"><option value="All">All categories</option></select>
+            <select id="sort" aria-label="Sort">
+                <option value="">Sort: Featured</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating">Top Rated</option>
+                <option value="name">Name A–Z</option>
+            </select>
+        </div>
+
+        <div class="product-grid" id="product-grid">
+            <p class="loading">Loading products…</p>
+        </div>
+
+    </section>
+
+
+    <!-- ABOUT -->
+    <section id="about" class="about-section">
+
+        <h2>Why Choose GlowCart? 💖</h2>
+
+        <div class="features">
+
+            <div class="feature">
+                <div class="icon">🚚</div>
+                <h3>Fast Delivery</h3>
+                <p>Quick and reliable delivery.</p>
+            </div>
+
+            <div class="feature">
+                <div class="icon">🔒</div>
+                <h3>Secure Shopping</h3>
+                <p>Safe and secure online shopping.</p>
+            </div>
+
+            <div class="feature">
+                <div class="icon">💎</div>
+                <h3>Quality Products</h3>
+                <p>Premium products at affordable prices.</p>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONTACT -->
+
+<section id="contact" class="contact-section">
+
+    <h2>Contact GlowCart 💖</h2>
+
+    <div class="contact-info">
+
+        <div class="contact-card">
+            <div class="contact-icon">📧</div>
+            <h3>Email Us</h3>
+            <p>sadiajaved928@gmail.com</p>
+
+            <a href="mailto:sadiajaved928@gmail.com">
+                Send Email
+            </a>
+        </div>
+
+
+        <div class="contact-card">
+            <div class="contact-icon">💬</div>
+            <h3>WhatsApp</h3>
+            <p>03296042976</p>
+
+            <a
+                href="https://wa.me/923296042976"
+                target="_blank"
+            >
+                Chat on WhatsApp
+            </a>
+        </div>
+
+    </div>
+
+
+    <form id="contact-form">
+
+        <input
+            type="text"
+            id="name"
+            placeholder="Your Name"
+            required
+        >
+
+        <input
+            type="email"
+            id="email"
+            placeholder="Your Email"
+            required
+        >
+
+        <textarea
+            id="message"
+            placeholder="Your Message"
+            required
+        ></textarea>
+
+        <button type="submit">
+            Send Message 💌
+        </button>
+
+    </form>
+
+</section>
+
+<div id="site-footer"></div>
+
+<script src="common.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

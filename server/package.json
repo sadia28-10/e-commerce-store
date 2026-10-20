@@ -1,0 +1,17 @@
+{
+  "name": "glowcart-server",
+  "version": "2.0.0",
+  "description": "GlowCart e-commerce store - Express + SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

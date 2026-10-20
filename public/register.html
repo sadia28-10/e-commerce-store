@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | GlowCart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page narrow">
+    <form id="auth-form" class="form-card" novalidate>
+        <h1>Join GlowCart ✨</h1>
+        <p class="muted">Create an account to place orders.</p>
+        <label>Full name<input name="name" required maxlength="80" autocomplete="name"></label>
+        <label>Email<input name="email" type="email" required autocomplete="email"></label>
+        <label>Password<input name="password" type="password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password"></label>
+        <p class="form-error" id="form-error" role="alert"></p>
+        <button class="primary-btn block" type="submit">Create Account</button>
+        <p class="switch">Already have an account? <a id="switch-link" href="login.html">Log in</a></p>
+    </form>
+</main>
+<div id="site-footer"></div>
+<script src="common.js"></script>
+<script>
+(async function () {
+    await loadUser();
+    // Only allow redirecting to a page inside this site (no open redirect)
+    const raw = new URLSearchParams(location.search).get("next") || "";
+    const next = /^[\w-]+\.html(\?[\w=&%.-]*)?$/.test(raw) ? raw : "index.html";
+    if (currentUser) { window.location.href = next; return; }
+    renderLayout();
+
+    const link = document.getElementById("switch-link");
+    if (raw) link.href += "?next=" + encodeURIComponent(raw);
+
+    const form = document.getElementById("auth-form");
+    const errBox = document.getElementById("form-error");
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errBox.textContent = "";
+        const body = Object.fromEntries(new FormData(form));
+        try {
+            await api("/api/auth/register", { method: "POST", body });
+            window.location.href = next;
+        } catch (err) {
+            errBox.textContent = err.message;
+        }
+    });
+})();
+</script>
+</body>
+</html>

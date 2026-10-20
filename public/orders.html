@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders | GlowCart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page">
+    <h1 class="page-title">My Orders 📦</h1>
+    <div id="orders-area"><p class="loading">Loading…</p></div>
+</main>
+<div id="site-footer"></div>
+<script src="common.js"></script>
+<script>
+(async function () {
+    if (!(await initPage({ requireLogin: true }))) return;
+    const area = document.getElementById("orders-area");
+    const placed = new URLSearchParams(location.search).get("placed");
+
+    async function render() {
+        let orders = [];
+        try {
+            orders = (await api("/api/orders")).orders;
+        } catch (err) {
+            area.innerHTML = `<p class="loading error">${esc(err.message)}</p>`;
+            return;
+        }
+
+        const banner = placed
+            ? `<div class="success-banner">🎉 Thank you! Your order <strong>#${esc(placed)}</strong> has been placed. You'll pay when it's delivered.</div>`
+            : "";
+
+        if (!orders.length) {
+            area.innerHTML = banner + `<div class="empty"><div class="icon">📦</div><h2>No orders yet</h2>
+                <a class="primary-btn" href="index.html#products">Start Shopping</a></div>`;
+            return;
+        }
+
+        area.innerHTML = banner + orders.map((o) => `
+        <article class="order-card ${String(o.id) === placed ? "highlight" : ""}">
+            <header>
+                <div><strong>Order #${o.id}</strong><small>${esc(o.created_at)} UTC</small></div>
+                <span class="status ${esc(o.status.toLowerCase())}">${esc(o.status)}</span>
+            </header>
+            <div class="order-items">
+                ${o.items.map((i) => `
+                <div class="order-item">
+                    ${i.image ? `<img src="${esc(i.image)}" alt="">` : ""}
+                    <a href="product.html?id=${i.product_id}">${esc(i.name)}</a>
+                    <span>${i.quantity} × ${formatPrice(i.price)}</span>
+                </div>`).join("")}
+            </div>
+            <footer>
+                <small>Ship to: ${esc(o.full_name)}, ${esc(o.address)}, ${esc(o.city)} · ${esc(o.phone)} · ${esc(o.payment_method)}</small>
+                <div>
+                    <strong>Total: ${formatPrice(o.total)}</strong>
+                    ${o.status === "Pending" ? `<button class="link-btn danger" data-cancel="${o.id}">Cancel order</button>` : ""}
+                </div>
+            </footer>
+        </article>`).join("");
+    }
+
+    area.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-cancel]");
+        if (!btn || !confirm("Cancel this order?")) return;
+        try {
+            await api(`/api/orders/${btn.dataset.cancel}/cancel`, { method: "POST" });
+            toast("Order cancelled.");
+            render();
+        } catch (err) {
+            toast(err.message, "error");
+        }
+    });
+
+    render();
+})();
+</script>
+</body>
+</html>

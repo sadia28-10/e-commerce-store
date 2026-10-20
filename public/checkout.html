@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | GlowCart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page">
+    <h1 class="page-title">Checkout 💳</h1>
+    <div id="checkout-area"><p class="loading">Loading…</p></div>
+</main>
+<div id="site-footer"></div>
+<script src="common.js"></script>
+<script>
+(async function () {
+    if (!(await initPage({ requireLogin: true }))) return;
+    const area = document.getElementById("checkout-area");
+    const lines = Cart.get();
+
+    if (!lines.length) {
+        area.innerHTML = `<div class="empty"><div class="icon">🛍️</div><h2>Your cart is empty</h2>
+            <a class="primary-btn" href="index.html#products">Start Shopping</a></div>`;
+        return;
+    }
+
+    let products = [];
+    try {
+        products = (await api("/api/products?ids=" + lines.map((l) => l.productId).join(","))).products;
+    } catch (err) {
+        area.innerHTML = `<p class="loading error">${esc(err.message)}</p>`;
+        return;
+    }
+    const byId = Object.fromEntries(products.map((p) => [p.id, p]));
+    const items = lines.filter((l) => byId[l.productId]);
+    const total = items.reduce((sum, l) => sum + byId[l.productId].price * l.quantity, 0);
+
+    area.innerHTML = `
+    <div class="cart-layout">
+        <form id="checkout-form" class="form-card" novalidate>
+            <h2>Shipping Details</h2>
+            <label>Full name<input name="fullName" required maxlength="80" value="${esc(currentUser.name)}"></label>
+            <label>Phone number<input name="phone" type="tel" required placeholder="03XXXXXXXXX" maxlength="20"></label>
+            <label>Address<textarea name="address" required maxlength="200" rows="3" placeholder="House, street, area"></textarea></label>
+            <label>City<input name="city" required maxlength="60"></label>
+            <h2>Payment</h2>
+            <label class="radio"><input type="radio" name="payment" checked> 💵 Cash on Delivery</label>
+            <p class="form-error" id="form-error" role="alert"></p>
+            <button class="primary-btn block" id="place" type="submit">Place Order — ${formatPrice(total)}</button>
+        </form>
+        <aside class="summary">
+            <h2>Your Order</h2>
+            ${items.map((l) => `<div class="sum-row"><span>${esc(byId[l.productId].name)} × ${l.quantity}</span><span>${formatPrice(byId[l.productId].price * l.quantity)}</span></div>`).join("")}
+            <div class="sum-row"><span>Delivery</span><span>Free</span></div>
+            <div class="sum-row total"><span>Total</span><span>${formatPrice(total)}</span></div>
+        </aside>
+    </div>`;
+
+    const form = document.getElementById("checkout-form");
+    const errBox = document.getElementById("form-error");
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errBox.textContent = "";
+        const f = new FormData(form);
+        const btn = document.getElementById("place");
+        btn.disabled = true;
+        btn.textContent = "Placing order…";
+        try {
+            const { order } = await api("/api/orders", {
+                method: "POST",
+                body: {
+                    items: items,
+                    shipping: { fullName: f.get("fullName"), phone: f.get("phone"), address: f.get("address"), city: f.get("city") },
+                    paymentMethod: "Cash on Delivery",
+                },
+            });
+            Cart.clear();
+            window.location.href = "orders.html?placed=" + order.id;
+        } catch (err) {
+            errBox.textContent = err.message;
+            btn.disabled = false;
+            btn.textContent = "Place Order — " + formatPrice(total);
+            if (err.status === 401) window.location.href = "login.html?next=checkout.html";
+        }
+    });
+})();
+</script>
+</body>
+</html>

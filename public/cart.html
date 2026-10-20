@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart | GlowCart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page">
+    <h1 class="page-title">Your Shopping Cart 🛒</h1>
+    <div id="cart-area"><p class="loading">Loading…</p></div>
+</main>
+<div id="site-footer"></div>
+<script src="common.js"></script>
+<script>
+(async function () {
+    await initPage();
+    const area = document.getElementById("cart-area");
+    let catalog = {}; // id -> product
+
+    async function render() {
+        const lines = Cart.get();
+        if (!lines.length) {
+            area.innerHTML = `<div class="empty"><div class="icon">🛍️</div><h2>Your cart is empty</h2>
+                <p>Looks like you haven't added anything yet.</p><a class="primary-btn" href="index.html#products">Start Shopping</a></div>`;
+            return;
+        }
+
+        try {
+            const { products } = await api("/api/products?ids=" + lines.map((l) => l.productId).join(","));
+            catalog = Object.fromEntries(products.map((p) => [p.id, p]));
+        } catch (err) {
+            area.innerHTML = `<p class="loading error">${esc(err.message)}</p>`;
+            return;
+        }
+
+        // Drop products that no longer exist; cap quantity at available stock
+        const valid = lines.filter((l) => catalog[l.productId]);
+        if (valid.length !== lines.length) Cart.save(valid);
+        if (!valid.length) return render();
+
+        let subtotal = 0, problem = false;
+        const rows = valid.map((l) => {
+            const p = catalog[l.productId];
+            const lineTotal = p.price * l.quantity;
+            subtotal += lineTotal;
+            const tooMany = l.quantity > p.stock;
+            if (tooMany) problem = true;
+            return `
+            <div class="cart-row">
+                <a href="product.html?id=${p.id}"><img src="${esc(p.image)}" alt="${esc(p.name)}"></a>
+                <div class="cart-name">
+                    <a href="product.html?id=${p.id}">${esc(p.name)}</a>
+                    <small>${formatPrice(p.price)} each</small>
+                    ${tooMany ? `<small class="warn">${p.stock === 0 ? "Out of stock" : "Only " + p.stock + " available"} — please adjust</small>` : ""}
+                </div>
+                <div class="qty">
+                    <button data-dec="${p.id}" aria-label="Decrease">−</button>
+                    <span>${l.quantity}</span>
+                    <button data-inc="${p.id}" aria-label="Increase">+</button>
+                </div>
+                <div class="line-total">${formatPrice(lineTotal)}</div>
+                <button class="remove" data-remove="${p.id}" aria-label="Remove">✕</button>
+            </div>`;
+        }).join("");
+
+        area.innerHTML = `
+        <div class="cart-layout">
+            <div class="cart-list">${rows}</div>
+            <aside class="summary">
+                <h2>Order Summary</h2>
+                <div class="sum-row"><span>Items</span><span>${Cart.count()}</span></div>
+                <div class="sum-row"><span>Delivery</span><span>Free</span></div>
+                <div class="sum-row total"><span>Total</span><span>${formatPrice(subtotal)}</span></div>
+                <a class="primary-btn block ${problem ? "disabled" : ""}" href="${problem ? "#" : "checkout.html"}">Proceed to Checkout →</a>
+                <button class="link-btn" id="clear">Clear cart</button>
+            </aside>
+        </div>`;
+    }
+
+    area.addEventListener("click", (e) => {
+        const t = e.target.closest("button");
+        if (!t) return;
+        const lines = Cart.get();
+        const find = (id) => lines.find((l) => l.productId === Number(id));
+        if (t.dataset.inc) {
+            const l = find(t.dataset.inc), p = catalog[l.productId];
+            if (l.quantity >= Math.min(20, p.stock)) return toast("No more stock available for this item.", "error");
+            Cart.setQuantity(l.productId, l.quantity + 1);
+        } else if (t.dataset.dec) {
+            const l = find(t.dataset.dec);
+            Cart.setQuantity(l.productId, l.quantity - 1);
+        } else if (t.dataset.remove) {
+            Cart.remove(Number(t.dataset.remove));
+        } else if (t.id === "clear") {
+            Cart.clear();
+        } else return;
+        render();
+    });
+
+    render();
+})();
+</script>
+</body>
+</html>
